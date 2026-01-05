@@ -1,0 +1,9 @@
+{
+  "restaurant": "Golden Dragon",
+  "menu": [
+    { "name": "Chow Mein", "price": "₹120" },
+    { "name": "Fried Rice", "price": "₹110" },
+    { "name": "Manchurian", "price": "₹130" },
+    { "name": "Spring Roll", "price": "₹90" }
+  ]
+}
