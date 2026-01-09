@@ -1,0 +1,38 @@
+<script>
+fetch("menu.json")
+  .then(res => res.json())
+  .then(menu => {
+
+    function render(category, gridId) {
+      const grid = document.getElementById(gridId);
+      if (!grid || !menu[category]) return;
+
+      grid.innerHTML = "";
+
+      menu[category].forEach(item => {
+        grid.innerHTML += `
+          <div class="card" data-tags="${item.tags.join(" ")} ${item.type}">
+            <div class="name">${item.name}</div>
+            ${item.desc ? `<div class="desc">${item.desc}</div>` : ""}
+            <div class="meta">
+              <span class="price">${item.price}</span>
+              <div class="badges">
+                <span class="badge ${item.type}">
+                  ${item.type === "veg" ? "নিরামিষ" : "আমিষ"}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    render("snacks", "snacksGrid");
+    render("rice", "riceGrid");
+    render("biryani", "biryaniGrid");
+    render("veg", "vegGrid");
+    render("nonveg", "nonvegGrid");
+    render("dessert", "dessertGrid");
+
+  });
+</script>
