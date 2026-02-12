@@ -1,9 +1,515 @@
-{
-  "restaurant": "Golden Dragon",
-  "menu": [
-    { "name": "Chow Mein", "price": "₹520" },
-    { "name": "Fried Rice", "price": "₹150" },
-    { "name": "Manchurian", "price": "₹130" },
-    { "name": "Spring Roll", "price": "₹90" }
-  ]
-}
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vojon Rosik — মেনু</title>
+
+  <style>
+    :root{
+      --brand:#0f5132;
+      --brand-2:#b8860b;
+      --bg:#faf9f6;
+      --text:#1b1b1b;
+      --muted:#6b6b6b;
+      --card:#ffffff;
+      --accent:#ddbea9;
+      --danger:#8b0000;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:"Noto Sans Bengali","Hind Siliguri",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .app{max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+    .header{position:sticky;top:0;z-index:50;background:linear-gradient(0deg,var(--brand),#093a25);color:#fff;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.15)}
+    .brandrow{display:flex;align-items:center;gap:12px}
+    .logo{width:40px;height:40px;border-radius:8px;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .titlewrap{display:flex;flex-direction:column}
+    .title{font-weight:700;font-size:18px;line-height:1.2}
+    .subtitle{font-size:12px;color:#e9f5ef}
+
+    .tools{display:flex;gap:8px;margin-top:10px}
+    .search{flex:1;display:flex;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:8px}
+    .search input{flex:1;border:none;outline:none;background:transparent;color:#fff;font-size:14px}
+    .pill{padding:8px 10px;border-radius:10px;background:#fff;color:var(--brand);border:1px solid rgba(0,0,0,.06);font-weight:600;font-size:13px}
+
+    .tabs{display:flex;gap:8px;padding:10px 0 6px;overflow-x:auto}
+    .tab{white-space:nowrap;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.35);color:#fff;background:transparent;font-weight:600;font-size:13px}
+    .tab.active{background:#fff;color:var(--brand)}
+
+    .section{padding:14px 16px}
+    .section h2{font-size:18px;margin:0 0 10px 0;color:var(--brand);border-left:4px solid var(--brand-2);padding-left:8px}
+
+    .grid{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+    @media (max-width:480px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+    .name{font-weight:700;font-size:15px;line-height:1.35}
+    .desc{font-size:12px;color:var(--muted)}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .price{font-weight:800;font-size:16px;color:var(--danger)}
+    .badges{display:flex;gap:6px;flex-wrap:wrap}
+    .badge{font-size:11px;border-radius:999px;padding:3px 8px;border:1px solid rgba(0,0,0,.1);color:#333;background:#f5efe6}
+    .badge.nonveg{background:#ffe5e5;color:#5a0000}
+    .badge.veg{background:#eaf7ea;color:#0b4d2b}
+    .badge.special{background:#fff3cd;color:#7a5b00;border-color:#f6e39a}
+
+    .note{margin:16px;font-size:12px;color:var(--muted);background:#fff;border:1px dashed rgba(0,0,0,.12);padding:10px;border-radius:8px}
+    .hidden{display:none!important}
+
+    /* Announcement banner */
+    .announce{display:none;background:#fff3cd;color:#7a5b00;border:1px solid #f6e39a;margin:10px 16px;padding:8px;border-radius:8px;font-size:13px}
+    .announce.show{display:block}
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="brandrow">
+      <div class="logo">VR</div>
+      <div class="titlewrap">
+        <div class="title">ভোজন রসিক</div>
+        <div class="subtitle">৭৫, বেন্টিঙ্ক স্ট্রিট, কলকাতা — (+৯১) ৯৮৩০০ ৮০০২২</div>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="search">
+        <input id="search" type="search" placeholder="ডিশ খুঁজুন… যেমন ‘কোষা’, ‘ইলিশ’, ‘পোলাও’">
+      </div>
+      <button class="pill" id="vegOnly">নিরামিষ</button>
+      <button class="pill" id="nonVegOnly">আমিষ</button>
+    </div>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-target="snacks">স্ন্যাকস</button>
+      <button class="tab" data-target="rice">ভাত / পোলাও</button>
+      <button class="tab" data-target="biryani">বিরিয়ানি</button>
+      <button class="tab" data-target="veg">নিরামিষ আ’লাকার্ট</button>
+      <button class="tab" data-target="nonveg">আমিষ আ’লাকার্ট</button>
+      <button class="tab" data-target="thali-veg">থালি (নিরামিষ)</button>
+      <button class="tab" data-target="thali-nonveg">থালি (আমিষ)</button>
+      <button class="tab" data-target="combo">স্পেশাল কম্বো</button>
+      <button class="tab" data-target="dessert">ডেজার্ট</button>
+    </nav>
+  </header>
+
+  <div id="announce" class="announce"></div>
+
+  <!-- Snacks -->
+  <section class="section" id="snacks">
+    <h2>স্ন্যাকস</h2>
+    <div class="grid">
+
+      <div class="card" data-tags="snacks fish fry nonveg">
+        <div class="name">ফিশ ডায়মন্ড ফ্রাই (১ পিস)</div>
+        <div class="desc">কাসুন্দি ও স্যালাড সহ</div>
+        <div class="meta">
+          <span class="price">₹229</span>
+          <div class="badges">
+            <span class="badge nonveg">আমিষ</span>
+            <span class="badge">কাসুন্দি</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks fish finger nonveg">
+        <div class="name">ফিশ ফিঙ্গার (৬ পিস)</div>
+        <div class="desc">কাসুন্দি ও স্যালাড সহ</div>
+        <div class="meta">
+          <span class="price">₹249</span>
+          <div class="badges"><span class="badge nonveg">আমিষ</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks fish kabiraji nonveg">
+        <div class="name">ফিশ কাবিরাজি (১ পিস)</div>
+        <div class="desc">টমেটো সস ও স্যালাড সহ</div>
+        <div class="meta">
+          <span class="price">₹199</span>
+          <div class="badges"><span class="badge nonveg">আমিষ</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks veg paratha">
+        <div class="name">লাচ্ছা পরোটা</div>
+        <div class="desc">তাজা ঘি-র ফোল্ডেড পরোটা</div>
+        <div class="meta">
+          <span class="price">₹30</span>
+          <div class="badges"><span class="badge veg">নিরামিষ</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks combo mutton paratha nonveg special">
+        <div class="name">পরোটা-মাটন কম্বো</div>
+        <div class="desc">লাচ্ছা পরোটা (২) + মাটন কোষা (২) + থামস আপ</div>
+        <div class="meta">
+          <span class="price">₹269</span>
+          <div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">কম্বো</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks combo chicken paratha nonveg special">
+        <div class="name">পরোটা-চিকেন কম্বো</div>
+        <div class="desc">লাচ্ছা পরোটা (২) + চিকেন কোষা (২) + থামস আপ</div>
+        <div class="meta">
+          <span class="price">₹249</span>
+          <div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">কম্বো</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks combo egg paratha nonveg special">
+        <div class="name">পরোটা-হাঁসের ডিমের কোষা কম্বো</div>
+        <div class="desc">লাচ্ছা পরোটা (২) + হাঁসের ডিমের কোষা (২) + থামস আপ</div>
+        <div class="meta">
+          <span class="price">₹219</span>
+          <div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">কম্বো</span></div>
+        </div>
+      </div>
+
+      <div class="card" data-tags="snacks combo paneer paratha veg special">
+        <div class="name">পরোটা-পনির কম্বো</div>
+        <div class="desc">লাচ্ছা পরোটা (২) + মালাই পনির + থামস আপ</div>
+        <div class="meta">
+          <span class="price">₹229</span>
+          <div class="badges"><span class="badge veg">নিরামিষ</span><span class="badge special">কম্বো</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Rice / Pulao -->
+  <section class="section hidden" id="rice">
+    <h2>ভাত / পোলাও</h2>
+    <div class="grid">
+      <div class="card" data-tags="rice pulao veg">
+        <div class="name">পিঁয়াজ-ছোলা পোলাও</div>
+        <div class="desc">পিস পোলাও</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="rice pulao veg">
+        <div class="name">ভেজ পোলাও</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="rice pulao veg special">
+        <div class="name">বাসন্তী পোলাও</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span><span class="badge special">স্পেশাল</span></div></div>
+      </div>
+      <div class="card" data-tags="rice veg">
+        <div class="name">জিরা রাইস</div>
+        <div class="meta"><span class="price">₹119</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="rice veg">
+        <div class="name">বাসমতি রাইস</div>
+        <div class="meta"><span class="price">₹79</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="rice pulao nonveg chingri">
+        <div class="name">চিংড়ি পোলাও</div>
+        <div class="meta"><span class="price">₹259</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Biryani -->
+  <section class="section hidden" id="biryani">
+    <h2>বিরিয়ানি</h2>
+    <div class="grid">
+      <div class="card" data-tags="biryani mutton nonveg">
+        <div class="name">মাটন বিরিয়ানি</div>
+        <div class="meta"><span class="price">₹299</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="biryani chicken nonveg">
+        <div class="name">চিকেন বিরিয়ানি</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="biryani combo nonveg special">
+        <div class="name">মাটন বিরিয়ানি + চিকেন চ্যাপ</div>
+        <div class="meta"><span class="price">₹499</span><div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">কম্বো</span></div></div>
+      </div>
+      <div class="card" data-tags="biryani combo nonveg special">
+        <div class="name">চিকেন বিরিয়ানি + মাটন চ্যাপ</div>
+        <div class="meta"><span class="price">₹529</span><div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">কম্বো</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Veg à-la-carte -->
+  <section class="section hidden" id="veg">
+    <h2>নিরামিষ আ’লাকার্ট</h2>
+    <div class="grid">
+      <div class="card" data-tags="veg paneer">
+        <div class="name">পনির দো পিয়াজা</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg paneer">
+        <div class="name">মালাই পনির / পনির বাটার মাসালা</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg paneer">
+        <div class="name">কড়াই পনির</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg paneer">
+        <div class="name">পালক পনির</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg chanar">
+        <div class="name">ছানার দালনা (২ পিস)</div>
+        <div class="meta"><span class="price">₹149</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg posto">
+        <div class="name">আলু পোস্টো</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg posto">
+        <div class="name">পটল পোস্টো / ঝিঙে পোস্টো</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg echor">
+        <div class="name">এঁচোরের রসা</div>
+        <div class="meta"><span class="price">₹149</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg fulkopi">
+        <div class="name">ফুলকপি-আলু দিয়ে ডালনা</div>
+        <div class="meta"><span class="price">₹119</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg doi">
+        <div class="name">দই বেগুন</div>
+        <div class="meta"><span class="price">₹239</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+
+      <div class="card" data-tags="veg dorma">
+        <div class="name">পটলের দর্মা</div>
+        <div class="meta"><span class="price">₹129</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg kochu">
+        <div class="name">মান কচু বাটা নারকেল দিয়ে</div>
+        <div class="meta"><span class="price">₹149</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg kochu">
+        <div class="name">ওল ভর্তা সরষে বাটা দিয়ে</div>
+        <div class="meta"><span class="price">₹149</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg saag">
+        <div class="name">কলমি শাক ভাজা</div>
+        <div class="meta"><span class="price">₹69</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg saag">
+        <div class="name">লাল শাক ভাজা</div>
+        <div class="meta"><span class="price">₹69</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg doi">
+        <div class="name">দই পটল</div>
+        <div class="meta"><span class="price">₹129</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg posto">
+        <div class="name">পটল পোস্টো</div>
+        <div class="meta"><span class="price">₹149</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="veg bora">
+        <div class="name">পোস্তর বড়া (২ পিস)</div>
+        <div class="meta"><span class="price">₹179</span><div class="badges"><span class="badge veg">নিরামিষ</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Non-veg à-la-carte -->
+  <section class="section hidden" id="nonveg">
+    <h2>আমিষ আ’লাকার্ট</h2>
+    <div class="grid">
+      <div class="card" data-tags="nonveg ilish">
+        <div class="name">সরষে ইলিশ (২ পিস)</div>
+        <div class="meta"><span class="price">₹359</span><div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">ইলিশ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg pomfret">
+        <div class="name">পমফ্রেট মাছের সরষে-পোস্ত ঝাল (১ পিস)</div>
+        <div class="meta"><span class="price">₹349</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg ilish">
+        <div class="name">ইলিশ মাছ ভাজা (২ পিস)</div>
+        <div class="meta"><span class="price">₹349</span><div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">ইলিশ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg pomfret">
+        <div class="name">পমফ্রেট ভাজা (বড় ১ পিস)</div>
+        <div class="meta"><span class="price">₹319</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chingri">
+        <div class="name">চিংড়ি মালাইকারি (২ পিস)</div>
+        <div class="meta"><span class="price">₹289</span><div class="badges"><span class="badge nonveg">আমিষ</span><span class="badge special">চিংড়ি</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chicken">
+        <div class="name">চিকেন বাটার মাসালা (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chicken">
+        <div class="name">চিকেন দো পিয়াজা (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg bhetki">
+        <div class="name">ভেটকি মাছের পাতুরি (২ পিস)</div>
+        <div class="meta"><span class="price">₹289</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg mutton">
+        <div class="name">মাটন কোষা (২ পিস)</div>
+        <div class="meta"><span class="price">₹289</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg mutton">
+        <div class="name">খাসির মাংসের লাল ঝোল (২ পিস)</div>
+        <div class="meta"><span class="price">₹289</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+
+      <div class="card" data-tags="nonveg pabda">
+        <div class="name">পাবদা মাছের সরষে-পোস্ত ঝাল (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chicken">
+        <div class="name">কড়াই চিকেন (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chicken">
+        <div class="name">চিকেন কোষা (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg chicken">
+        <div class="name">চিকেন কারি (২ পিস)</div>
+        <div class="meta"><span class="price">₹249</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+      <div class="card" data-tags="nonveg katla">
+        <div class="name">কাতলা মাছের কালিয়া (১ পিস)</div>
+        <div class="meta"><span class="price">₹189</span><div class="badges"><span class="badge nonveg">আমিষ</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">দাম ও আইটেম সময়ে সময়ে পরিবর্তিত হতে পারে। অনুগ্রহ করে সার্ভারের সাথে নিশ্চিত করুন।</div>
+</div>
+
+<script>
+(function(){
+  const qs = s => document.querySelector(s);
+  const qsa = s => Array.from(document.querySelectorAll(s));
+  const sections = qsa('.section');
+  const tabs = qsa('.tab');
+  const searchInput = qs('#search');
+  const vegBtn = qs('#vegOnly');
+  const nonVegBtn = qs('#nonVegOnly');
+  const announce = qs('#announce');
+
+  // Helpers
+  const showSection = id => {
+    sections.forEach(sec => sec.classList.toggle('hidden', sec.id !== id));
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.target === id));
+    setURLState({section:id});
+  };
+
+  const setURLState = (state) => {
+    const url = new URL(window.location);
+    Object.entries(state).forEach(([k,v]) => {
+      if (v === null || v === undefined) url.searchParams.delete(k);
+      else url.searchParams.set(k, v);
+    });
+    history.replaceState(null, '', url);
+  };
+
+  const applyURLState = () => {
+    const url = new URL(window.location);
+    const section = url.searchParams.get('section');
+    const q = url.searchParams.get('q');
+    const filter = url.searchParams.get('filter'); // veg|nonveg|null
+
+    if (section && qs('#'+section)) showSection(section);
+    if (q) { searchInput.value = q; applySearch(q); }
+    if (filter === 'veg') applyFilter('veg');
+    else if (filter === 'nonveg') applyFilter('nonveg');
+    else clearFilter();
+  };
+
+  // Tabs
+  tabs.forEach(t => t.addEventListener('click', () => showSection(t.dataset.target)));
+
+  // Search
+  function applySearch(term){
+    const needle = term.trim().toLowerCase();
+    qsa('.card').forEach(card => {
+      const name = card.querySelector('.name').textContent.toLowerCase();
+      const tags = (card.getAttribute('data-tags')||'').toLowerCase();
+      const match = name.includes(needle) || tags.includes(needle);
+      card.style.display = match ? '' : 'none';
+    });
+    setURLState({q: term || null});
+  }
+  searchInput.addEventListener('input', e => applySearch(e.target.value));
+
+  // Filters
+  let currentFilter = null;
+  function applyFilter(kind){
+    currentFilter = kind;
+    qsa('.card').forEach(card => {
+      const isVeg = !!card.querySelector('.badge.veg');
+      const isNonVeg = !!card.querySelector('.badge.nonveg');
+      const show = (kind === 'veg' && isVeg) || (kind === 'nonveg' && isNonVeg);
+      card.style.display = show ? '' : 'none';
+    });
+    setURLState({filter:kind});
+  }
+  function clearFilter(){
+    currentFilter = null;
+    qsa('.card').forEach(card => card.style.display = '');
+    setURLState({filter:null});
+  }
+  vegBtn.addEventListener('click', () => applyFilter('veg'));
+  nonVegBtn.addEventListener('click', () => applyFilter('nonveg'));
+
+  // Announcement
+  function setAnnouncement(text){
+    if (!text) { announce.classList.remove('show'); announce.textContent=''; return; }
+    announce.textContent = text;
+    announce.classList.add('show');
+  }
+
+  // Price update by dish name (exact match)
+  function updatePriceByName(nameBn, newPrice){
+    qsa('.card').forEach(card => {
+      const nm = card.querySelector('.name')?.textContent.trim();
+      if (nm === nameBn) {
+        const priceEl = card.querySelector('.price');
+        priceEl.textContent = newPrice;
+      }
+    });
+  }
+
+  // Remote control via BroadcastChannel
+  const channel = new BroadcastChannel('vr-control');
+  channel.onmessage = (ev) => {
+    const msg = ev.data || {};
+    switch(msg.type){
+      case 'show-section': if (msg.id && qs('#'+msg.id)) showSection(msg.id); break;
+      case 'search': applySearch(msg.term||''); break;
+      case 'filter': if (msg.kind) applyFilter(msg.kind); else clearFilter(); break;
+      case 'announce': setAnnouncement(msg.text||''); break;
+      case 'update-price': updatePriceByName(msg.name, msg.price); break;
+      case 'hide-item':
+        qsa('.card').forEach(card => {
+          const nm = card.querySelector('.name')?.textContent.trim();
+          if (nm === msg.name) card.style.display = 'none';
+        });
+        break;
+      case 'show-item':
+        qsa('.card').forEach(card => {
+          const nm = card.querySelector('.name')?.textContent.trim();
+          if (nm === msg.name) card.style.display = '';
+        });
+        break;
+    }
+  };
+
+  // Initial state from URL
+  applyURLState();
+
+  // Fallback: default to first visible section if none selected
+  if (!new URL(window.location).searchParams.get('section')) showSection('snacks');
+})();
+</script>
+</body>
+</html>

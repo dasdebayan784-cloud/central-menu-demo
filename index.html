@@ -1,53 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-<meta charset="UTF-8">
-<title>Chinese Menu</title>
-<style>
-body {
-  font-family: Arial;
-  background: #fff8f0;
-}
-h1 {
-  text-align: center;
-  color: darkred;
-}
-.menu {
-  max-width: 400px;
-  margin: auto;
-}
-.item {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  border-bottom: 1px dashed #999;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vojon Rosik — কন্ট্রোল</title>
+  <style>
+    body{font-family:"Noto Sans Bengali","Hind Siliguri",system-ui; margin:20px; background:#faf9f6; color:#1b1b1b}
+    h1{font-size:18px;margin:0 0 12px}
+    .panel{background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:12px;margin-bottom:14px}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input,select,button{font-size:14px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,.15)}
+    button{background:#0f5132;color:#fff;border:none;cursor:pointer}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .row > *{flex:1}
+  </style>
 </head>
 <body>
+  <h1>ভোজন রসিক — রিমোট কন্ট্রোল</h1>
 
-<h1 id="restaurantName">Loading...</h1>
+  <div class="panel">
+    <label>সেকশন দেখান</label>
+    <div class="row">
+      <select id="section">
+        <option value="snacks">স্ন্যাকস</option>
+        <option value="rice">ভাত / পোলাও</option>
+        <option value="biryani">বিরিয়ানি</option>
+        <option value="veg">নিরামিষ আ’লাকার্ট</option>
+        <option value="nonveg">আমিষ আ’লাকার্ট</option>
+      </select>
+      <button id="btnSection">প্রয়োগ করুন</button>
+    </div>
+  </div>
 
-<div class="menu" id="menuList"></div>
+  <div class="panel">
+    <label>সার্চ</label>
+    <div class="row">
+      <input id="searchTerm" placeholder="যেমন: ইলিশ, কোষা, পোলাও">
+      <button id="btnSearch">সার্চ পাঠান</button>
+      <button id="btnClearSearch" style="background:#6b6b6b">ক্লিয়ার</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>ফিল্টার</label>
+    <div class="row">
+      <button data-kind="veg">নিরামিষ</button>
+      <button data-kind="nonveg">আমিষ</button>
+      <button id="btnClearFilter" style="background:#6b6b6b">ফিল্টার ক্লিয়ার</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>ঘোষণা (Announcement)</label>
+    <div class="row">
+      <input id="announceText" placeholder="যেমন: আজ ইলিশ ফ্রেশ স্টক এসেছে!">
+      <button id="btnAnnounce">ঘোষণা দেখান</button>
+      <button id="btnAnnounceClear" style="background:#6b6b6b">ঘোষণা লুকান</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>দাম আপডেট</label>
+    <div class="row">
+      <input id="priceName" placeholder="ডিশের নাম (এক্স্যাক্ট)">
+      <input id="priceValue" placeholder="নতুন দাম যেমন ₹299">
+      <button id="btnPrice">দাম আপডেট</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label>আইটেম শো/হাইড</label>
+    <div class="row">
+      <input id="itemName" placeholder="ডিশের নাম (এক্স্যাক্ট)">
+      <button id="btnHide">লুকান</button>
+      <button id="btnShow">দেখান</button>
+    </div>
+  </div>
 
 <script>
-fetch("menu.json")
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("restaurantName").innerText = data.restaurant;
+const ch = new BroadcastChannel('vr-control');
 
-    let menuHTML = "";
-    data.menu.forEach(item => {
-      menuHTML += `
-        <div class="item">
-          <span>${item.name}</span>
-          <span>${item.price}</span>
-        </div>
-      `;
-    });
-    document.getElementById("menuList").innerHTML = menuHTML;
-  });
+document.getElementById('btnSection').onclick = () => {
+  const id = document.getElementById('section').value;
+  ch.postMessage({type:'show-section', id});
+};
+
+document.getElementById('btnSearch').onclick = () => {
+  const term = document.getElementById('searchTerm').value;
+  ch.postMessage({type:'search', term});
+};
+document.getElementById('btnClearSearch').onclick = () => {
+  ch.postMessage({type:'search', term:''});
+};
+
+document.querySelectorAll('[data-kind]').forEach(btn => {
+  btn.onclick = () => ch.postMessage({type:'filter', kind:btn.dataset.kind});
+});
+document.getElementById('btnClearFilter').onclick = () => ch.postMessage({type:'filter', kind:null});
+
+document.getElementById('btnAnnounce').onclick = () => {
+  const text = document.getElementById('announceText').value;
+  ch.postMessage({type:'announce', text});
+};
+document.getElementById('btnAnnounceClear').onclick = () => ch.postMessage({type:'announce', text:''});
+
+document.getElementById('btnPrice').onclick = () => {
+  const name = document.getElementById('priceName').value.trim();
+  const price = document.getElementById('priceValue').value.trim();
+  if (name && price) ch.postMessage({type:'update-price', name, price});
+};
+
+document.getElementById('btnHide').onclick = () => {
+  const name = document.getElementById('itemName').value.trim();
+  if (name) ch.postMessage({type:'hide-item', name});
+};
+document.getElementById('btnShow').onclick = () => {
+  const name = document.getElementById('itemName').value.trim();
+  if (name) ch.postMessage({type:'show-item', name});
+};
 </script>
-
 </body>
 </html>
